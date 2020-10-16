@@ -1,9 +1,10 @@
-import { Button, Card, CardActions, CardContent, CircularProgress, Paper, TextField, Typography, withStyles } from '@material-ui/core';
+import { Button, Card, CardActions, CardContent, CircularProgress, TextField, Typography, withStyles } from '@material-ui/core';
 import React from 'react';
 import { Component } from 'react';
 import { Link } from 'react-router-dom';
-import { IDocumentInfo } from '../contracts/document';
+import { IDocumentInfo, IDocumentVersionInfo } from '../contracts/document';
 import { Description } from '@material-ui/icons';
+import { DocumentVersionsDialog } from './DocumentVersionsDialog';
 
 const styles = {
     button: {
@@ -17,19 +18,25 @@ export default class DocumentExplorer extends Component<{
     recentDocuments: IDocumentInfo[], 
     nowSearching: boolean,
     search: (title: string) => any, 
+    open: (docId: string) => any,
 }> {
     render = () => <div>
         <DocumentFilter search={this.props.search} />
         {this.props.nowSearching && <CircularProgress />}
         <DocList 
-            suggestedDocuments={this.props.suggestedDocuments} />
+            documents={this.props.suggestedDocuments}
+            open={this.props.open} />
         {this.props.recentDocuments.length > 0 && <h3>Recent documents</h3>}
         <DocList
-            suggestedDocuments={this.props.recentDocuments} />
+            documents={this.props.recentDocuments}
+            open={this.props.open} />
     </div>;
 }
 
-class DocumentFilter extends Component<{ search: (title: string) => any, }, { title: string, }> {
+class DocumentFilter extends Component<
+    { search: (title: string) => any, }, 
+    { title: string, }
+> {
     constructor(props: { search: (title: string) => any, }) {
         super(props);
         this.state = { title: '', };
@@ -47,20 +54,40 @@ class DocumentFilter extends Component<{ search: (title: string) => any, }, { ti
         }, 400);
     }
 
-    render = () => <div>
-        <TextField label="Enter document title" onChange={this._onChange} value={this.state.title} />
-    </div>;
+    render = () => <TextField 
+        label="Enter document title" 
+        onChange={this._onChange} 
+        value={this.state.title} />;
 }
 
-class DocumentList extends Component<{ suggestedDocuments: IDocumentInfo[], classes?: any }> {
-    // render = () => <div>{ this.props.suggestedDocuments.map((d, i) => 
-    //     <Paper key={i} elevation={3}>
-    //         <Description />
-    //         <Link to={d.userFriendlyId || ''}>{d.caption}</Link>
-    //     </Paper>)}
-    // </div>;
+interface IDocumentListProps {
+    documents: IDocumentInfo[], 
+    classes?: any,
+    open: (docId: string) => any,
+}
 
-    render = () => <div>{ this.props.suggestedDocuments.map((d, i) => 
+class DocumentList extends Component<
+    IDocumentListProps,
+    {
+        openVersionsDialog: string | null,
+    }
+> {
+    constructor(props: IDocumentListProps) {
+        super(props);
+        this.state = {
+            openVersionsDialog: null,
+        };
+    }
+
+    private _onVersionSelected = (version: IDocumentVersionInfo | null) => {
+        this.setState({ openVersionsDialog: null });
+        if (version) {
+            //console.log(`view.open ${version.userFriendlyId}`);
+            this.props.open(version.userFriendlyId);
+        }
+    };
+    
+    render = () => <div>{ this.props.documents.map((d, i) => 
         <Card key={i} className={this.props.classes?.button || ''}>
             <CardContent>
             <Typography variant="h5" component="h2">
@@ -69,7 +96,23 @@ class DocumentList extends Component<{ suggestedDocuments: IDocumentInfo[], clas
             </CardContent>
             <CardActions>
                 <Link to={d.userFriendlyId || ''}>Go to the document</Link>
-                <Button color="primary" size="small">Learn More</Button>
+                {d.otherVersions && d.otherVersions.length > 0
+                    ? <div>
+                        <Button 
+                            color="primary" 
+                            size="small"
+                            onClick={() => this.setState({ openVersionsDialog: d.userFriendlyId || null })}
+                        >
+                            {d.otherVersions.length} others version(s)
+                        </Button>
+                        <DocumentVersionsDialog 
+                            open={this.state.openVersionsDialog === d.userFriendlyId} 
+                            onClose={this._onVersionSelected}
+                            versions={d.otherVersions}
+                            for={d.caption} />
+                    </div>
+                    : <React.Fragment></React.Fragment>
+                }
             </CardActions>
         </Card>)}
     </div>;

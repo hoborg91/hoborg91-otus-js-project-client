@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
-//import logo from './logo.svg';
+// import logo from './logo.svg';
 import './App.css';
 import DocumentExplorer from './components/DocumentExplorer';
-import ExploredDocument from './components/ExploredDocument';
-import { BrowserRouter as Router, Link, Route, Switch } from 'react-router-dom';
+// import ExploredDocument from './components/ExploredDocument';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { IDocument, IDocumentInfo } from './contracts/document';
 import { beginLoad, beginSearch, getDocumentById, searchDocumentByCaption } from './logic/documentExplorerSlice';
+import ExploredDocumentContainer from './components/ExploredDocumentContainer';
 
 interface IAppProps_State {
     nowSearching: boolean;
@@ -23,24 +24,29 @@ interface IAppProps_Router {
 interface IAppProps_Dispatch {
     search: (title: string) => any;
     open: (docId: string) => any;
+    addComment: (author: string, text: string) => any;
 }
 
 class App extends Component<IAppProps_State & IAppProps_Router & IAppProps_Dispatch> {
     render = () => <Router>
         <Switch>
             <Route path="/:documentId" render={(props) => (
-                <ExploredDocument 
+                <ExploredDocumentContainer 
                     {...props} 
                     document={this.props.currentDocument}
                     open={this.props.open}
-                    nowLoading={this.props.nowLoading} />
+                    nowLoading={this.props.nowLoading} 
+                    addComment={this.props.addComment}
+                />
             )} />
             <Route path="/">
                 <DocumentExplorer 
                     nowSearching={this.props.nowSearching}
                     suggestedDocuments={this.props.suggestedDocuments} 
                     search={this.props.search}
-                    recentDocuments={this.props.recentDocuments} />
+                    recentDocuments={this.props.recentDocuments}
+                    open={this.props.open} 
+                />
             </Route>
         </Switch>
     </Router>
@@ -58,17 +64,19 @@ function mapStateToProps(state: any, ownProps: any): IAppProps_State {
 }
 
 function mapDispatchToProps(dispatch: any, ownProps: any): IAppProps_Dispatch {
-    //console.log(ownProps);
     return {
-      // dispatching plain actions
-      search: (title: string) => {
-          dispatch(beginSearch());
-          dispatch(searchDocumentByCaption(title));
-      },// dispatch(search(title)),
-      open: (docId: string) => {
-          dispatch(beginLoad());
-          dispatch(getDocumentById(docId));
-      },// dispatch(open(docId)),
+        // dispatching plain actions
+        search: (title: string) => {
+            dispatch(beginSearch());
+            dispatch(searchDocumentByCaption(title));
+        },
+        open: (docId: string) => {
+            dispatch(beginLoad());
+            dispatch(getDocumentById(docId));
+        },
+        addComment: (author: string, text: string) => {
+            console.log(`add comment (${author}) ${text}`);
+        },
     }
   }
 

@@ -20,7 +20,6 @@ export interface IDocument extends IDocumentInfo {
 
 export interface IExploredDocument extends IDocument {
     linksToThis?: string[];
-    notes?: string[];
     conversation?: IComment[];
     exploredParts?: IExploredDocument[];
 }
